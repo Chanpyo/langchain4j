@@ -1,0 +1,164 @@
+네, Wikipedia와 연동하여 데이터를 로드하는 코드를 작성해 드리겠습니다. Langchain4j에서는 Wikipedia 로더를 직접 제공하지 않기 때문에, Java Wikipedia API를 사용하여 데이터를 가져온 후 Langchain4j의 문서 형식으로 변환하는 방식으로 구현하겠습니다.
+
+먼저, pom.xml에 Wikipedia API 의존성을 추가해야 합니다:
+
+```xml
+<dependency>
+    <groupId>org.wikipedia</groupId>
+    <artifactId>wikipedia-api</artifactId>
+    <version>0.1.5</version>
+</dependency>
+```
+
+그리고 다음과 같이 Wikipedia 로더 클래스를 만들 수 있습니다:
+
+```java
+import dev.langchain4j.data.document.Document;
+import dev.langchain4j.data.document.Metadata;
+import org.wikipedia.Wiki;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+public class WikipediaLoader {
+
+    private final Wiki wiki;
+
+    public WikipediaLoader(String language) {
+        this.wiki = new Wiki(language + ".wikipedia.org");
+    }
+
+    public List<Document> loadArticles(List<String> titles) {
+        List<Document> documents = new ArrayList<>();
+
+        for (String title : titles) {
+            try {
+                String content = wiki.getPageText(title);
+                Metadata metadata = new Metadata();
+                metadata.add("source", "wikipedia");
+                metadata.add("title", title);
+
+                Document document = new Document(content, metadata);
+                documents.add(document);
+            } catch (IOException e) {
+                System.err.println("Error loading article: " + title);
+                e.printStackTrace();
+            }
+        }
+
+        return documents;
+    }
+
+    public Document loadArticle(String title) {
+        try {
+            String content = wiki.getPageText(title);
+            Metadata metadata = new Metadata();
+            metadata.add("source", "wikipedia");
+            metadata.add("title", title);
+
+            return new Document(content, metadata);
+        } catch (IOException e) {
+            System.err.println("Error loading article: " + title);
+            e.printStackTrace();
+            return null;
+        }
+    }
+}
+```
+
+이제 이 로더를 사용하여 Wikipedia 데이터를 로드하고 처리하는 서비스 클래스를 만들 수 있습니다:
+
+```java
+import dev.langchain4j.data.document.Document;
+import dev.langchain4j.data.document.splitter.DocumentSplitters;
+import dev.langchain4j.data.segment.TextSegment;
+import dev.langchain4j.model.embedding.EmbeddingModel;
+import dev.langchain4j.store.embedding.EmbeddingStore;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+public class WikipediaService {
+
+    private final WikipediaLoader loader;
+    private final EmbeddingModel embeddingModel;
+    private final EmbeddingStore<TextSegment> embeddingStore;
+
+    public WikipediaService(EmbeddingModel embeddingModel, EmbeddingStore<TextSegment> embeddingStore) {
+        this.loader = new WikipediaLoader("en"); // 영어 Wikipedia 사용
+        this.embeddingModel = embeddingModel;
+        this.embeddingStore = embeddingStore;
+    }
+
+    public void loadAndStoreArticle(String title) {
+        Document document = loader.loadArticle(title);
+        if (document != null) {
+            List<TextSegment> segments = DocumentSplitters.recursive(500, 0)
+                    .split(document);
+
+            for (TextSegment segment : segments) {
+                embeddingStore.add(embeddingModel.embed(segment).content(), segment);
+            }
+
+            System.out.println("Article '" + title + "' loaded and stored.");
+        }
+    }
+
+    public List<TextSegment> searchSimilarSegments(String query, int maxResults) {
+        return embeddingStore.findRelevant(embeddingModel.embed(query).content(), maxResults);
+    }
+}
+```
+
+이 서비스 클래스는 다음과 같은 기능을 제공합니다:
+
+1. Wikipedia 아티클을 로드하고, 이를 작은 세그먼트로 나눕니다.
+2. 각 세그먼트를 임베딩하여 벡터 저장소에 저장합니다.
+3. 쿼리를 받아 유사한 세그먼트를 검색합니다.
+
+마지막으로, 이 서비스를 사용하는 컨트롤러를 만들 수 있습니다:
+
+```java
+import dev.langchain4j.data.segment.TextSegment;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/wikipedia")
+public class WikipediaController {
+
+    private final WikipediaService wikipediaService;
+
+    public WikipediaController(WikipediaService wikipediaService) {
+        this.wikipediaService = wikipediaService;
+    }
+
+    @PostMapping("/load")
+    public String loadArticle(@RequestParam String title) {
+        wikipediaService.loadAndStoreArticle(title);
+        return "Article '" + title + "' loaded and stored.";
+    }
+
+    @GetMapping("/search")
+    public List<TextSegment> search(@RequestParam String query, @RequestParam(defaultValue = "5") int maxResults) {
+        return wikipediaService.searchSimilarSegments(query, maxResults);
+    }
+}
+```
+
+이제 다음과 같이 사용할 수 있습니다:
+
+1. Wikipedia 아티클 로드:
+   ```
+   POST http://localhost:8080/wikipedia/load?title=Artificial_intelligence
+   ```
+
+2. 유사한 세그먼트 검색:
+   ```
+   GET http://localhost:8080/wikipedia/search?query=What is machine learning?&maxResults=3
+   ```
+
+이 구현은 Wikipedia 데이터를 로드하고, 이를 벡터 저장소에 저장한 후, 유사도 검색을 수행하는 기본적인 기능을 제공합니다. 실제 사용 시에는 에러 처리, 동시성 관리, 캐싱 등을 추가로 고려해야 할 수 있습니다.

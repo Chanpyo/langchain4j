@@ -1,0 +1,44 @@
+Langchain4j에서 사용 가능한 agent의 종류에 대해 알려드리겠습니다. Langchain4j는 여러 종류의 agent를 제공하며, 각각 다른 용도와 특성을 가지고 있습니다. 주요 agent 유형은 다음과 같습니다:
+
+1. ConversationalAgent
+   - 대화형 인터페이스를 제공하는 agent입니다.
+   - 사용자와의 대화를 관리하고, 필요에 따라 도구(tools)를 사용합니다.
+
+2. FunctionCallingAgent
+   - 특정 함수나 도구를 호출할 수 있는 agent입니다.
+   - 주어진 작업에 따라 적절한 함수를 선택하고 실행합니다.
+
+3. ReactAgent
+   - Reason-Act 패턴을 따르는 agent입니다.
+   - 주어진 정보를 분석하고, 적절한 행동을 선택하여 실행합니다.
+
+4. StructuredPromptAgent
+   - 구조화된 프롬프트를 사용하여 응답을 생성하는 agent입니다.
+   - 특정 형식이나 구조를 가진 출력을 생성하는 데 유용합니다.
+
+5. Tool-using Agent
+   - 다양한 도구(tools)를 사용할 수 있는 agent입니다.
+   - 문제 해결을 위해 여러 도구를 조합하여 사용할 수 있습니다.
+
+6. PlanAndExecuteAgent
+   - 작업을 계획하고 실행하는 두 단계로 나누어 처리하는 agent입니다.
+   - 복잡한 작업을 단계별로 분해하고 실행합니다.
+
+7. OpenAIAssistantAgent
+   - OpenAI의 Assistant API를 활용하는 agent입니다.
+   - OpenAI의 고급 기능을 직접 사용할 수 있습니다.
+
+8. AiServicesAgent
+   - AI 서비스 인터페이스를 구현한 클래스를 바탕으로 동작하는 agent입니다.
+   - 사용자 정의 메서드를 AI 모델을 통해 실행할 수 있습니다.
+
+이러한 agent들은 각각 다른 사용 사례와 장단점을 가지고 있습니다. 예를 들어:
+
+- ConversationalAgent는 챗봇 같은 대화형 시스템에 적합합니다.
+- FunctionCallingAgent는 특정 작업을 수행하는 데 유용합니다.
+- ReactAgent는 복잡한 추론이 필요한 작업에 적합합니다.
+- StructuredPromptAgent는 특정 형식의 출력이 필요한 경우에 유용합니다.
+
+실제 구현 시에는 프로젝트의 요구사항과 특성에 따라 적절한 agent를 선택하거나, 여러 agent를 조합하여 사용할 수 있습니다. 필요에 따라 이러한 agent들을 커스터마이즈하거나 확장할 수도 있습니다.
+
+특정 agent에 대해 더 자세한 정보나 사용 예제가 필요하시다면 말씀해 주세요.
